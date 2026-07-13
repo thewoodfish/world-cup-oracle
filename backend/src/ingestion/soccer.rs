@@ -50,12 +50,15 @@ pub struct RawSoccerEventData {
     pub participant: Option<i32>,
 }
 
+/// Both sides are optional: a live `corner` event was observed with `"Score":{}` —
+/// entirely empty, neither participant present — so treat missing as "no data yet"
+/// rather than a parse error.
 #[derive(Debug, Deserialize)]
 pub struct RawScoreBlock {
     #[serde(rename = "Participant1")]
-    pub participant1: RawScoreSide,
+    pub participant1: Option<RawScoreSide>,
     #[serde(rename = "Participant2")]
-    pub participant2: RawScoreSide,
+    pub participant2: Option<RawScoreSide>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -136,14 +139,14 @@ pub fn map_soccer_event(raw: &RawSoccerEvent) -> Option<MatchEvent> {
             Some(MatchEvent::FullTime {
                 home_score: score
                     .participant1
-                    .total
                     .as_ref()
+                    .and_then(|p| p.total.as_ref())
                     .and_then(|t| t.goals)
                     .unwrap_or(0),
                 away_score: score
                     .participant2
-                    .total
                     .as_ref()
+                    .and_then(|p| p.total.as_ref())
                     .and_then(|t| t.goals)
                     .unwrap_or(0),
             })
@@ -248,5 +251,15 @@ mod tests {
                 away_score: 0,
             }
         );
+    }
+
+    /// Real bug caught during a full-match replay dry run (2026-07-13, event #60 of the
+    /// France v Morocco quarter-final): a `corner` event carried `"Score":{}` — completely
+    /// empty, neither side present, not just missing `Total`/`Goals`. This must not error.
+    #[test]
+    fn empty_score_block_does_not_panic_or_error() {
+        let raw: RawSoccerEvent =
+            serde_json::from_str(r#"{"Action":"corner","Confirmed":true,"Score":{}}"#).unwrap();
+        assert_eq!(map_soccer_event(&raw), None);
     }
 }
