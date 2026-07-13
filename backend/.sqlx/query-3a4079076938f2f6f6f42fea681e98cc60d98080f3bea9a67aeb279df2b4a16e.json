@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO users (wallet_pubkey)\n        VALUES ($1)\n        ON CONFLICT (wallet_pubkey) DO UPDATE SET wallet_pubkey = EXCLUDED.wallet_pubkey\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3a4079076938f2f6f6f42fea681e98cc60d98080f3bea9a67aeb279df2b4a16e"
+}

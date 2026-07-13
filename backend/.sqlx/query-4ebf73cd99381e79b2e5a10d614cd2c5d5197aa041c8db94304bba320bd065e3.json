@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, match_id, prediction_type, payload, submitted_at\n        FROM predictions\n        WHERE user_id = $1 AND match_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "predictions",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "match_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "predictions",
+            "name": "match_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "prediction_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "predictions",
+            "name": "prediction_type"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "payload",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "predictions",
+            "name": "payload"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "submitted_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "predictions",
+            "name": "submitted_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4ebf73cd99381e79b2e5a10d614cd2c5d5197aa041c8db94304bba320bd065e3"
+}

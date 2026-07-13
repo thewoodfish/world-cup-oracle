@@ -1,0 +1,12 @@
+{
+  "name": "txline-activate",
+  "private": true,
+  "description": "One-time TxLINE devnet activation script (CLAUDE.md Section 5, item 3). Not part of the Rust build.",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.98.4",
+    "axios": "^1.18.1",
+    "tweetnacl": "^1.0.3"
+  }
+}

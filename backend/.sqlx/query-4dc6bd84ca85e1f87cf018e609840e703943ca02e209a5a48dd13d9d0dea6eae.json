@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO achievements (user_id, achievement_key)\n                VALUES ($1, $2)\n                ON CONFLICT (user_id, achievement_key) DO NOTHING\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4dc6bd84ca85e1f87cf018e609840e703943ca02e209a5a48dd13d9d0dea6eae"
+}

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO predictions (user_id, match_id, prediction_type, payload)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (user_id, match_id, prediction_type)\n        DO UPDATE SET payload = EXCLUDED.payload, submitted_at = now()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "83f90278767d48122e69120e4a61c15bc40278cede0590c8e1db943a7b808d98"
+}

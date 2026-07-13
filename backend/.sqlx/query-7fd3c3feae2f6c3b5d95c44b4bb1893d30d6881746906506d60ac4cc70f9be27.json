@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT prediction_type, points FROM scores WHERE user_id = $1 AND match_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "prediction_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "scores",
+            "name": "prediction_type"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "points",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "scores",
+            "name": "points"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7fd3c3feae2f6c3b5d95c44b4bb1893d30d6881746906506d60ac4cc70f9be27"
+}

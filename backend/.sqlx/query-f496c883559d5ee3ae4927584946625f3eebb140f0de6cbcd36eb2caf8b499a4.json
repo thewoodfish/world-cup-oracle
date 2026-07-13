@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT s.points\n        FROM scores s\n        JOIN matches m ON m.id = s.match_id\n        WHERE s.user_id = $1 AND s.prediction_type = 'outcome'\n        ORDER BY m.kickoff_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "points",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "scores",
+            "name": "points"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f496c883559d5ee3ae4927584946625f3eebb140f0de6cbcd36eb2caf8b499a4"
+}

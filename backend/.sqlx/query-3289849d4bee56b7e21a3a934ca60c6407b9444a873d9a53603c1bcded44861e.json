@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, txline_match_id, home_team, away_team, kickoff_at, status\n        FROM matches\n        ORDER BY kickoff_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "txline_match_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "txline_match_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "home_team",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "home_team"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "away_team",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "away_team"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "kickoff_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "kickoff_at"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "matches",
+            "name": "status"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3289849d4bee56b7e21a3a934ca60c6407b9444a873d9a53603c1bcded44861e"
+}
