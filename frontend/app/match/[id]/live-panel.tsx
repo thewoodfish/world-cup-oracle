@@ -2,11 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Radio, Trophy, WifiOff } from "lucide-react";
+import { CheckCircle2, Circle, PartyPopper, Radio, Trophy, WifiOff, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import {
+  PREDICTION_LABEL,
+  PREDICTION_ORDER,
+  TOTAL_PREDICTION_POINTS,
+  type PredictionType,
+} from "@/lib/predictions";
 import {
   WS_BASE_URL,
   fetchMatchLeaderboard,
@@ -21,13 +29,11 @@ type FeedItem = {
 };
 
 const EVENT_LABELS: Record<string, string> = {
-  goal: "⚽ Goal",
   card: "🟨 Card",
   substitution: "🔄 Substitution",
   shot: "🎯 Shot",
   penalty: "⚠️ Penalty",
   extra_time_started: "⏱️ Extra Time",
-  full_time: "🏁 Full Time",
 };
 
 function summarize(eventType: string, payload: Record<string, unknown>) {
@@ -51,6 +57,9 @@ export function LivePanel({ matchId }: { matchId: string }) {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [myTotal, setMyTotal] = useState<number | null>(null);
+  const [myScores, setMyScores] = useState<Map<PredictionType, number>>(new Map());
+  const [matchFinished, setMatchFinished] = useState(false);
+  const [showReveal, setShowReveal] = useState(false);
   const [toasts, setToasts] = useState<{ id: string; key: string }[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -87,10 +96,19 @@ export function LivePanel({ matchId }: { matchId: string }) {
               ...prev,
             ].slice(0, 15),
           );
+          if (msg.event_type === "full_time") {
+            setMatchFinished(true);
+            setShowReveal(true);
+          }
         } else if (msg.type === "leaderboard_update") {
           setLeaderboard(msg.top);
         } else if (msg.type === "score_update") {
-          if (session && msg.user_id === session.userId) setMyTotal(msg.total);
+          if (session && msg.user_id === session.userId) {
+            setMyTotal(msg.total);
+            setMyScores((prev) =>
+              new Map(prev).set(msg.prediction_type as PredictionType, msg.points),
+            );
+          }
         } else if (msg.type === "achievement_unlocked") {
           if (session && msg.user_id === session.userId) {
             const id = `${Date.now()}-${Math.random()}`;
@@ -136,6 +154,72 @@ export function LivePanel({ matchId }: { matchId: string }) {
         </AnimatePresence>
       </div>
 
+      <AnimatePresence>
+        {showReveal && session && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 backdrop-blur-sm"
+            onClick={() => setShowReveal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", damping: 20, stiffness: 260 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Card className="w-80 overflow-hidden">
+                <CardHeader className="items-center text-center">
+                  <PartyPopper className="h-8 w-8 text-accent" />
+                  <CardTitle>Full time!</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {PREDICTION_ORDER.map((type) => {
+                    const pts = myScores.get(type);
+                    const correct = (pts ?? 0) > 0;
+                    return (
+                      <div
+                        key={type}
+                        className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm"
+                      >
+                        <span className="flex items-center gap-2">
+                          {pts === undefined ? (
+                            <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : correct ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                          ) : (
+                            <X className="h-3.5 w-3.5 text-danger" />
+                          )}
+                          {PREDICTION_LABEL[type]}
+                        </span>
+                        <span className="font-semibold">
+                          {pts === undefined ? "—" : `+${pts}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between rounded-md bg-accent/15 px-3 py-2">
+                    <span className="text-sm font-medium">Total score</span>
+                    <span className="text-lg font-bold text-accent">
+                      {myTotal ?? 0}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {" "}
+                        / {TOTAL_PREDICTION_POINTS}
+                      </span>
+                    </span>
+                  </div>
+                  <Button variant="outline" onClick={() => setShowReveal(false)}>
+                    Close
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center gap-2">
         {connected ? (
           <Badge variant="live" className="animate-pulse-live">
@@ -158,6 +242,36 @@ export function LivePanel({ matchId }: { matchId: string }) {
         )}
       </div>
 
+      {session && myScores.size > 0 && (
+        <Card>
+          <CardContent className="flex flex-wrap gap-2 p-3">
+            {PREDICTION_ORDER.filter((t) => myScores.has(t)).map((type) => {
+              const pts = myScores.get(type) ?? 0;
+              const correct = pts > 0;
+              return (
+                <motion.span
+                  key={type}
+                  layout
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                    correct
+                      ? "bg-primary/15 text-primary"
+                      : matchFinished
+                        ? "bg-danger/10 text-danger"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {correct ? "🔥" : matchFinished ? "✕" : "⏳"} {PREDICTION_LABEL[type]}
+                  {correct && ` +${pts}`}
+                </motion.span>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Match feed</CardTitle>
@@ -174,12 +288,17 @@ export function LivePanel({ matchId }: { matchId: string }) {
                   <motion.li
                     key={item.id}
                     layout
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, x: -12, scale: item.event_type === "goal" ? 0.9 : 1 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="rounded-md bg-muted px-3 py-2 text-sm"
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm",
+                      item.event_type === "goal"
+                        ? "bg-accent/15 font-semibold text-accent-foreground"
+                        : "bg-muted",
+                    )}
                   >
-                    {item.summary}
+                    {item.event_type === "goal" ? `⚽ ${item.summary}` : item.summary}
                   </motion.li>
                 ))}
               </AnimatePresence>

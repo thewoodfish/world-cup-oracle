@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Countdown } from "@/components/countdown";
 import { WalletButton } from "@/app/wallet-button";
 import { fetchMatches, type MatchRow } from "@/lib/api";
+import { teamFlag } from "@/lib/teams";
 import { PredictionForm } from "./prediction-form";
 import { LivePanel } from "./live-panel";
 
@@ -51,22 +53,30 @@ export default function MatchPage() {
 
       {match && (
         <>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Badge variant={locked ? "default" : "primary"}>
                 {locked ? "In progress / finished" : "Upcoming"}
               </Badge>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+              <span>{teamFlag(match.home_team)}</span>
               {match.home_team} vs {match.away_team}
+              <span>{teamFlag(match.away_team)}</span>
             </h1>
             <p className="text-sm text-muted-foreground">
               Kickoff {new Date(match.kickoff_at).toLocaleString()}
             </p>
+            {!locked && <Countdown targetIso={match.kickoff_at} />}
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <PredictionForm matchId={matchId} locked={locked} />
+            <PredictionForm
+              matchId={matchId}
+              locked={locked}
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
+            />
             <LivePanel matchId={matchId} />
           </div>
         </>

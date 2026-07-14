@@ -56,6 +56,7 @@ export async function submitPrediction(
   token: string,
   matchId: string,
   prediction: Prediction,
+  isLock = false,
 ): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/predictions`, {
     method: "POST",
@@ -63,7 +64,7 @@ export async function submitPrediction(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ match_id: matchId, ...prediction }),
+    body: JSON.stringify({ match_id: matchId, is_lock: isLock, ...prediction }),
   });
   if (!res.ok) throw new Error(`request failed: ${res.status}`);
 }
@@ -71,11 +72,21 @@ export async function submitPrediction(
 export async function fetchMyPredictions(
   token: string,
   matchId: string,
-): Promise<Array<{ prediction_type: string; payload: Prediction }>> {
+): Promise<Array<{ prediction_type: string; payload: Prediction; is_lock: boolean }>> {
   const res = await fetch(
     `${API_BASE_URL}/predictions/mine?match_id=${matchId}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
+  if (!res.ok) throw new Error(`request failed: ${res.status}`);
+  return res.json();
+}
+
+export type OutcomeConsensus = { home_win: number; draw: number; away_win: number };
+
+export async function fetchOutcomeConsensus(
+  matchId: string,
+): Promise<OutcomeConsensus> {
+  const res = await fetch(`${API_BASE_URL}/predictions/consensus?match_id=${matchId}`);
   if (!res.ok) throw new Error(`request failed: ${res.status}`);
   return res.json();
 }

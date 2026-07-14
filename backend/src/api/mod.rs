@@ -15,6 +15,10 @@ pub fn router() -> Router<AppState> {
         .route("/matches", get(matches::list_matches))
         .route("/predictions", post(predictions::submit_prediction))
         .route("/predictions/mine", get(predictions::my_predictions))
+        .route(
+            "/predictions/consensus",
+            get(predictions::outcome_consensus),
+        )
         .route("/leaderboard/global", get(leaderboard::global))
         .route("/leaderboard/match/{match_id}", get(leaderboard::for_match))
         .route("/users/me/profile", get(profile::me))

@@ -19,6 +19,7 @@ pub struct PredictionRow {
     pub prediction_type: String,
     pub payload: serde_json::Value,
     pub submitted_at: DateTime<Utc>,
+    pub is_lock: bool,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]

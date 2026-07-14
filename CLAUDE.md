@@ -125,7 +125,9 @@ predictions (
   prediction_type TEXT, -- outcome | scoreline | key_moment | player_performance
   payload JSONB, -- shape depends on prediction_type, validated at API layer
   submitted_at TIMESTAMPTZ,
+  is_lock BOOLEAN DEFAULT false, -- "Lock of the Day" (Section 7a), added 2026-07-14
   UNIQUE(user_id, match_id, prediction_type) -- one prediction per type per match per user, adjust if multiple key-moment predictions allowed per match
+  -- + partial unique index on (user_id, match_id) WHERE is_lock, enforcing at most one lock per match
 )
 
 match_events (
@@ -169,6 +171,14 @@ trait Scorable {
     fn score(&self, events: &[MatchEvent]) -> ScoreResult;
 }
 ```
+
+### 7a. "Lock of the Day" (added 2026-07-14, engagement pass)
+
+One prediction per match can be flagged `is_lock` — the pick the user is staking double points on (CHATGPT.md's emotional-loop brief: "every day has a dramatic decision"). Since every `Scorable` impl already scores 0-or-full-points, a lock is just `points * 2` on that row — no separate win/lose branch needed. Enforced server-side: `predictions.is_lock`, with a partial unique index (`idx_predictions_one_lock_per_match`) guaranteeing at most one per `(user_id, match_id)`; setting a new lock atomically clears any previous one in the same transaction (`POST /predictions`, `is_lock: bool` field). Verified live: exclusivity, doubling, and normal (non-locked) scoring all confirmed correct via a real replay dry run before shipping.
+
+### 7b. Outcome consensus (added 2026-07-14, engagement pass)
+
+`GET /predictions/consensus?match_id=` returns real aggregate counts (`home_win`/`draw`/`away_win`) across all submitted outcome predictions for a match — no auth required, it's a count not per-user data. Powers "62% picked France" / "🔥 bold pick" copy in the outcome step. Deliberately not fabricated — if nobody's predicted yet, the UI says so rather than inventing a percentage.
 
 ## 8. Achievements (v1 scope)
 

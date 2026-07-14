@@ -19,7 +19,7 @@ pub async fn rescore_match(pool: &PgPool, bus: &EventBus, match_id: Uuid) -> any
 
     let predictions = sqlx::query!(
         r#"
-        SELECT user_id, prediction_type, payload
+        SELECT user_id, prediction_type, payload, is_lock
         FROM predictions
         WHERE match_id = $1
         "#,
@@ -33,6 +33,15 @@ pub async fn rescore_match(pool: &PgPool, bus: &EventBus, match_id: Uuid) -> any
             continue;
         };
         let result = prediction.score(&events);
+        // "Lock of the Day" (CLAUDE.md UX pass): the one pick per match the user stakes
+        // double points on. Every prediction type already scores 0-or-full-points, so a
+        // lock is just a 2x multiplier — no separate "wrong -> 0" branch needed, that's
+        // already how `Scorable` works.
+        let points = if row.is_lock {
+            result.points * 2
+        } else {
+            result.points
+        };
 
         sqlx::query!(
             r#"
@@ -44,7 +53,7 @@ pub async fn rescore_match(pool: &PgPool, bus: &EventBus, match_id: Uuid) -> any
             row.user_id,
             match_id,
             row.prediction_type,
-            result.points,
+            points,
         )
         .execute(pool)
         .await?;
@@ -63,7 +72,7 @@ pub async fn rescore_match(pool: &PgPool, bus: &EventBus, match_id: Uuid) -> any
                 user_id: row.user_id,
                 match_id,
                 prediction_type: row.prediction_type.clone(),
-                points: result.points,
+                points,
                 total,
             },
         );
