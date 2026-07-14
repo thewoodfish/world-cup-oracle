@@ -98,3 +98,25 @@ export async function fetchMatchLeaderboard(
   if (!res.ok) throw new Error(`request failed: ${res.status}`);
   return res.json();
 }
+
+export async function fetchGlobalLeaderboard(): Promise<LeaderboardRow[]> {
+  const res = await fetch(`${API_BASE_URL}/leaderboard/global`);
+  if (!res.ok) throw new Error(`request failed: ${res.status}`);
+  return res.json();
+}
+
+export type Profile = {
+  id: string;
+  wallet_pubkey: string;
+  display_name: string | null;
+  created_at: string;
+  achievements: string[];
+};
+
+export async function fetchProfile(token: string): Promise<Profile> {
+  const res = await fetch(`${API_BASE_URL}/users/me/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`request failed: ${res.status}`);
+  return res.json();
+}

@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Circle, PartyPopper, Radio, Trophy, WifiOff, X } from "lucide-react";
+import { CheckCircle2, Circle, PartyPopper, Radio, WifiOff, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { achievementMeta } from "@/lib/achievements";
 import {
   PREDICTION_LABEL,
   PREDICTION_ORDER,
@@ -139,18 +140,21 @@ export function LivePanel({ matchId }: { matchId: string }) {
     <div className="flex flex-col gap-4">
       <div className="fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2">
         <AnimatePresence>
-          {toasts.map((t) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg backdrop-blur"
-            >
-              <Trophy className="h-4 w-4 text-accent" />
-              Achievement unlocked: {t.key.replace(/_/g, " ")}
-            </motion.div>
-          ))}
+          {toasts.map((t) => {
+            const meta = achievementMeta(t.key);
+            return (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg backdrop-blur"
+              >
+                <span className="text-base">{meta.emoji}</span>
+                Achievement unlocked: {meta.label}
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
 

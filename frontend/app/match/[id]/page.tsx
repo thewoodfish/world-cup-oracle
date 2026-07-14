@@ -7,7 +7,6 @@ import { ArrowLeft } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
-import { WalletButton } from "@/app/wallet-button";
 import { fetchMatches, type MatchRow } from "@/lib/api";
 import { teamFlag } from "@/lib/teams";
 import { PredictionForm } from "./prediction-form";
@@ -34,15 +33,12 @@ export default function MatchPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-10">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> All matches
-        </Link>
-        <WalletButton />
-      </div>
+      <Link
+        href="/"
+        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" /> All matches
+      </Link>
 
       {match === undefined && (
         <p className="text-sm text-muted-foreground">Loading match…</p>

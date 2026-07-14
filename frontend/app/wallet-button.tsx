@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useMounted } from "@/lib/use-mounted";
 
 function shortAddress(pubkey: string) {
   return `${pubkey.slice(0, 4)}…${pubkey.slice(-4)}`;
@@ -14,6 +15,14 @@ function shortAddress(pubkey: string) {
 export function WalletButton() {
   const { connected, publicKey } = useWallet();
   const { status, error, signIn } = useAuth();
+  // wallet-adapter's WalletMultiButton only knows what's installed after mounting in the
+  // browser, so its server-rendered markup never matches the client — render a stable
+  // placeholder until then rather than eating a hydration-mismatch warning every load.
+  const mounted = useMounted();
+
+  if (!mounted) {
+    return <Button disabled>Select Wallet</Button>;
+  }
 
   if (!connected || !publicKey) {
     return <WalletMultiButton />;
