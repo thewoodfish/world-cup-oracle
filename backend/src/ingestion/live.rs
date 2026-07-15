@@ -23,6 +23,16 @@ const JWT_REFRESH_INTERVAL: Duration = Duration::from_secs(20 * 60);
 /// Long-running — intended to be spawned as its own task per live/upcoming match and to
 /// run for the lifetime of that match. Errors are logged and retried rather than
 /// propagated, per CLAUDE.md Section 13 ("degrade gracefully... rather than crashing").
+///
+/// Real-world lesson from the France v Spain semi-final (2026-07-14): a ~14-hour local
+/// network outage during the match dropped the connection 44 minutes after kickoff and
+/// every naive reconnect just resumed live-tailing from "now," permanently losing
+/// everything in between. `/api/scores/historical/{fixtureId}` can't backfill that gap —
+/// it's documented as only serving fixtures that started 6+ hours ago, i.e. it's for
+/// post-match analysis, not mid-match gap recovery. The real fix is the SSE spec's own
+/// `Last-Event-ID` mechanism (TxLINE documents support for it): remember the last message
+/// id we actually processed and send it on every reconnect so TxLINE replays what we
+/// missed, instead of silently skipping ahead.
 pub async fn stream_fixture(
     client: &TxLineClient,
     fixture_id: i64,
@@ -30,6 +40,8 @@ pub async fn stream_fixture(
     pool: PgPool,
     bus: EventBus,
 ) {
+    let mut last_event_id: Option<String> = None;
+
     loop {
         let jwt = match client.authenticate_guest().await {
             Ok(jwt) => jwt,
@@ -55,12 +67,15 @@ pub async fn stream_fixture(
             }
         };
 
-        let request = reqwest::Client::new()
+        let mut request = reqwest::Client::new()
             .get(format!("{}/api/scores/stream", client.base_url()))
             .query(&[("fixtureId", fixture_id)])
             .bearer_auth(&jwt)
             .header("X-Api-Token", &api_token)
             .header("Accept-Encoding", "identity");
+        if let Some(id) = &last_event_id {
+            request = request.header("Last-Event-ID", id);
+        }
 
         let mut source = match EventSource::new(request) {
             Ok(source) => source,
@@ -75,7 +90,7 @@ pub async fn stream_fixture(
             }
         };
 
-        tracing::info!(fixture_id, %match_id, "opening live TxLINE scores stream");
+        tracing::info!(fixture_id, %match_id, ?last_event_id, "opening live TxLINE scores stream");
         let deadline = tokio::time::Instant::now() + JWT_REFRESH_INTERVAL;
 
         loop {
@@ -91,6 +106,9 @@ pub async fn stream_fixture(
                 Ok(Event::Message(msg)) => {
                     if msg.event == "heartbeat" {
                         continue;
+                    }
+                    if !msg.id.is_empty() {
+                        last_event_id = Some(msg.id.clone());
                     }
                     if let Err(err) = ingest_raw_event(&msg.data, match_id, &pool, &bus).await {
                         tracing::warn!(?err, fixture_id, data = %msg.data, "failed to ingest live event");
